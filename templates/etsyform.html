@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content1 %}
+
+<h1>Search Etsy:</h1>
+
+<form action="{{ url_for('etsy_results') }}" method="POST">
+    {{ form.keyword.label() }} {{ form.keyword() }}<br><br>
+    {{ form.min_price.label() }} {{ form.min_price() }}<br><br>
+    {{ form.max_price.label() }} {{ form.max_price() }}<br><br>
+    {{ form.submit() }}
+    {{ form.hidden_tag() }}
+</form>
+
+
+{% endblock %}

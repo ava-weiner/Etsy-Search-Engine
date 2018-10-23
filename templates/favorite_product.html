@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content1 %}
+
+<h1>Most Popular Product:</h1>
+<h2>{{ p.title }}</h2>
+Posted by: <i>{{ user }}</i><br>
+Price: <strong>{{ p.price }}</strong><br>
+Favorited by: {{ p.favorites }} people<br>
+<a href="{{ p.url }}">Find it here</a><br>
+
+{% endblock %}

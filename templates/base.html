@@ -1,0 +1,27 @@
+
+
+{% block content1 %}
+
+<form action="{{ url_for('home') }}" method="POST">
+    {{ form.name.label() }}{{ form.name() }}<br>
+    {{ form.submit() }}
+    {{ form.hidden_tag() }}
+</form>
+
+
+{% endblock %}
+
+<div>
+{% for message in get_flashed_messages() %}
+    <strong>{{ message }}</strong>
+{% endfor %}
+</div>
+
+<p>------------</p>
+<h3>Navigation</h3>
+<ul>
+    <li><a href="{{ url_for('etsy_search')}}">Go to Etsy search form.</a></li>
+    <li><a href="{{ url_for('see_all_products')}}">See all products.</a></li>
+    <li><a href="{{ url_for('see_all_users')}}">See all users.</a></li>
+    <li><a href="{{ url_for('favorite_product')}}">See most popular product.</a></li>
+</ul>
