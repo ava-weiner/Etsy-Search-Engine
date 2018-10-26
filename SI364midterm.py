@@ -95,6 +95,9 @@ class EtsyForm(FlaskForm):
 #######################
 ###### VIEW FXNS ######
 #######################
+@app.errorhandler(404)
+def page_custom_not_found(e):
+    return render_template('404.html')
 
 @app.route('/')
 def home():
@@ -135,41 +138,28 @@ def etsy_results():
         r = json.loads(req.text)['results']
         results = []
         for p in r:
-            product_exists = db.session.query(Product.id).filter_by(listingID=p['listing_id']).scalar()
-            if product_exists:
-                product = Product.query.filter_by(listingID=p['listing_id']).first()
-                user = User.query.filter_by(id = product.user_id).first()
-                url = product.url
-                user_exists = db.session.query(User.id).filter_by(id=p['user_id']).scalar()
-                if user_exists:
-                    u = User.query.filter_by(id = p['user_id']).first()
-                    user = u.name
+            user_exists = db.session.query(User.id).filter_by(id=p['user_id']).scalar()
+            if user_exists:
+                u = User.query.filter_by(id = p['user_id']).first()
+                product_exists = db.session.query(Product.id).filter_by(listingID=p['listing_id']).scalar()
+                if product_exists:
+                    product = Product.query.filter_by(listingID=p['listing_id']).first()
                 else:
-                    url2 = "https://openapi.etsy.com/v2/users/{}".format(p['user_id'])
-                    params_2 = {'api_key' : api_key}
-                    req2 = requests.get(url2, params = params_2)
-                    user = json.loads(req2.text)['results'][0]['login_name']
-                    u = User(id = p['user_id'], name=user)
-                    db.session.add(u)
+                    product = Product(title=p['title'], listingID=p['listing_id'], price=p['price'], url=p['url'], favorites=p['num_favorers'], user_id = u.id)
+                    db.session.add(product)
                     db.session.commit()
             else:
-                product = Product(title=p['title'], listingID=p['listing_id'], price=p['price'], url=p['url'], favorites=p['num_favorers'])
+                url2 = "https://openapi.etsy.com/v2/users/{}".format(p['user_id'])
+                params_2 = {'api_key' : api_key}
+                req2 = requests.get(url2, params = params_2)
+                user = json.loads(req2.text)['results'][0]['login_name']
+                u = User(id = p['user_id'], name=user)
+                db.session.add(u)
+                db.session.commit()
+                product = Product(title=p['title'], listingID=p['listing_id'], price=p['price'], url=p['url'], favorites=p['num_favorers'], user_id = u.id)
                 db.session.add(product)
                 db.session.commit()
-                user_exists = db.session.query(User.id).filter_by(id=p['user_id']).scalar()
-                if user_exists:
-                    u = User.query.filter_by(id = p['user_id']).first()
-                    user = u.name
-                else:
-                    url2 = "https://openapi.etsy.com/v2/users/{}".format(p['user_id'])
-                    params_2 = {'api_key' : api_key}
-                    req2 = requests.get(url2, params = params_2)
-                    user = json.loads(req2.text)['results'][0]['login_name']
-                    u = User(id = p['user_id'], name=user)
-                    db.session.add(u)
-                    db.session.commit()
-                url = product.url
-            results.append((product.title, user, url))
+            results.append((product.title, u.name, product.url))
         return render_template('etsy_results.html', results=results)
 
     errors = [v for v in form.errors.values()]
@@ -177,6 +167,41 @@ def etsy_results():
         flash("ERRORS IN FORM SUBMISSION: " + str(errors))
 
     return redirect(url_for('etsy_search'))
+
+@app.route('/etsy/<search>')
+def etsy_search2(search):
+    base_url = "https://openapi.etsy.com/v2/listings/active?"
+    params_d = {}
+    params_d['keywords'] = search
+    params_d['limit'] = 5
+    params_d['api_key'] = api_key
+    req = requests.get(base_url, params = params_d)
+    r = json.loads(req.text)['results']
+    results = []
+    for p in r:
+        user_exists = db.session.query(User.id).filter_by(id=p['user_id']).scalar()
+        if user_exists:
+            u = User.query.filter_by(id = p['user_id']).first()
+            product_exists = db.session.query(Product.id).filter_by(listingID=p['listing_id']).scalar()
+            if product_exists:
+                product = Product.query.filter_by(listingID=p['listing_id']).first()
+            else:
+                product = Product(title=p['title'], listingID=p['listing_id'], price=p['price'], url=p['url'], favorites=p['num_favorers'], user_id = u.id)
+                db.session.add(product)
+                db.session.commit()
+        else:
+            url2 = "https://openapi.etsy.com/v2/users/{}".format(p['user_id'])
+            params_2 = {'api_key' : api_key}
+            req2 = requests.get(url2, params = params_2)
+            user = json.loads(req2.text)['results'][0]['login_name']
+            u = User(id = p['user_id'], name=user)
+            db.session.add(u)
+            db.session.commit()
+            product = Product(title=p['title'], listingID=p['listing_id'], price=p['price'], url=p['url'], favorites=p['num_favorers'], user_id = u.id)
+            db.session.add(product)
+            db.session.commit()
+        results.append((product.title, u.name, product.url))
+    return render_template('etsy_results.html', results=results)
 
 @app.route('/all_products')
 def see_all_products():
@@ -190,7 +215,11 @@ def see_all_products():
 
 @app.route('/all_users')
 def see_all_users():
-    users = User.query.all()
+    users = []
+    for user in User.query.all():
+        use = user.name
+        num = len(Product.query.filter_by(user_id = user.id).all())
+        users.append((use, num))
     return render_template('all_users.html', users = users)
 
 @app.route('/favorite')

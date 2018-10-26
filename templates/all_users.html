@@ -4,7 +4,11 @@
 <h1>Users:</h1>
 <ul>
 {% for u in users %}
-    <li>{{ u.name }}</li><br><br>
+  {% if u[1] == 1 %}
+    <li>{{ u[0] }} -- {{ u[1] }} product</li><br><br>
+  {% else %}
+    <li>{{ u[0] }} -- {{ u[1] }} products</li><br><br>
+  {% endif %}
 {% endfor %}
 </ul>
 {% endblock %}
