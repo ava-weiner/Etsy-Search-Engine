@@ -37,15 +37,6 @@ api_key = "nazpgms5bqejgj1fwolg1c6w"
 ##################
 ##### MODELS #####
 ##################
-
-class Name(db.Model):
-    __tablename__ = "names"
-    id = db.Column(db.Integer,primary_key=True)
-    name = db.Column(db.String(64))
-
-    def __repr__(self):
-        return "{} (ID: {})".format(self.name, self.id)
-
 class Product(db.Model):
     __tablename__ = "products"
     id = db.Column(db.Integer,primary_key=True)
@@ -67,15 +58,19 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.name
 
+class Shop(db.Model):
+    __tablename__ = "shops"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    products = db.Column(db.Integer)
+    url = db.Column(db.String)
+
+    def __repr__(self):
+        return '<Shop %r>' % self.name
 
 ###################
 ###### FORMS ######
 ###################
-
-class NameForm(FlaskForm):
-    name = StringField("Please enter your name.",validators=[Required()])
-    submit = SubmitField("Submit")
-
 class EtsyForm(FlaskForm):
     keyword = StringField("What would you like to search Etsy for?", validators=[Required()])
     min_price = StringField("What is the minimum price you would pay? (no '$')", validators=[Required()])
@@ -90,30 +85,16 @@ class EtsyForm(FlaskForm):
         if '$' in self.max_price.data:
             raise ValidationError("Your maximum price was not valid because it included $.")
 
-
+class ShopForm(FlaskForm):
+    keyword = StringField("What type of shop are you looking for?", validators=[Required()])
+    submit = SubmitField("Submit")
 
 #######################
 ###### VIEW FXNS ######
 #######################
 @app.errorhandler(404)
-def page_custom_not_found(e):
-    return render_template('404.html')
-
-@app.route('/')
-def home():
-    form = NameForm() # User should be able to enter name after name and each one will be saved, even if it's a duplicate! Sends data with GET
-    if form.validate_on_submit():
-        name = form.name.data
-        newname = Name(name)
-        db.session.add(newname)
-        db.session.commit()
-        return redirect(url_for('all_names'))
-    return render_template('base.html',form=form)
-
-@app.route('/names')
-def all_names():
-    names = Name.query.all()
-    return render_template('name_example.html',names=names)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 @app.route('/etsy')
 def etsy_search():
@@ -203,6 +184,39 @@ def etsy_search2(search):
         results.append((product.title, u.name, product.url))
     return render_template('etsy_results.html', results=results)
 
+@app.route('/search/shops', methods = ["GET"])
+def shop_results():
+    form = ShopForm(request.args)
+    results = None
+    if request.method == 'GET' and form.validate():
+        keyword = form.keyword.data
+        base_url = "https://openapi.etsy.com/v2/shops?"
+        params_d = {}
+        params_d['api_key'] = api_key
+        params_d['keywords'] = keyword
+        params_d['limit'] = 5
+        req = requests.get(base_url, params = params_d)
+        r = json.loads(req.text)['results']
+        results = []
+        for s in r:
+            shop_exists = db.session.query(Shop.id).filter_by(id=s['shop_id']).scalar()
+            if shop_exists:
+                shop = Shop.query.filter_by(id = s['shop_id']).first()
+            else:
+                shop = Shop(id=s['shop_id'], name=s['shop_name'], products=s['listing_active_count'], url=s['url'])
+                db.session.add(shop)
+                db.session.commit()
+            results.append((shop.name, shop.products, shop.url))
+    print (results)
+    return render_template('shopform.html', form=form, results=results)
+
+@app.route('/all_shops')
+def see_all_shops():
+    shops = []
+    for shop in Shop.query.all():
+        shops.append((shop.name, shop.products, shop.url))
+    return render_template('all_shops.html', shops = shops)
+
 @app.route('/all_products')
 def see_all_products():
     all_products = []
@@ -225,7 +239,6 @@ def see_all_users():
 @app.route('/favorite')
 def favorite_product():
     fav = Product.query.order_by(Product.favorites.desc()).first()
-    # fav_user = (User.query.filter_by(id= Product.user_id).first()).name
     return render_template('favorite_product.html', p=fav, user="test name")
 
 ## Code to run the application...

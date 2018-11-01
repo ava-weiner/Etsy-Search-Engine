@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content1 %}
+
+<h1>Search Etsy Shops:</h1>
+
+<form method="GET">
+    {{ form.keyword.label() }} {{ form.keyword() }}<br><br>
+    {{ form.submit() }}
+    {{ form.hidden_tag() }}
+</form>
+
+
+<h2>Top 5 Shop Results:</h2>
+{% if results %}
+  <ul>
+  {% for s in results %}
+  {% if s[1] == 1 %}
+      <li><strong>{{ s[0] }}</strong> -- {{ s[1] }} product<br><a href="{{ s[2] }}">Find it here</a></li><br><br>
+      {% else %}
+      <li><strong>{{ s[0] }}</strong> -- {{ s[1] }} products<br><a href="{{ s[2] }}">Find it here</a></li><br><br>
+      {% endif %}
+  {% endfor %}
+  {% else %}
+  Search to find results.
+  {% endif %}
+
+</ul>
+{% endblock %}
