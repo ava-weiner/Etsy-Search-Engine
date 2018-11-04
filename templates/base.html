@@ -2,11 +2,7 @@
 
 {% block content1 %}
 
-<form action="{{ url_for('home') }}" method="POST">
-    {{ form.name.label() }}{{ form.name() }}<br>
-    {{ form.submit() }}
-    {{ form.hidden_tag() }}
-</form>
+<h1>Welcome to the Etsy Search Application!</h1>
 
 
 {% endblock %}
@@ -20,10 +16,10 @@
 <p>------------</p>
 <h3>Navigation</h3>
 <ul>
-    <li><a href="{{ url_for('etsy_search')}}">Go to Etsy search form.</a></li>
-    <li><a href="{{ url_for('see_all_products')}}">See all saved products.</a></li>
-    <li><a href="{{ url_for('see_all_users')}}">See all saved users.</a></li>
-    <li><a href="{{ url_for('favorite_product')}}">See most popular product.</a></li>
+    <li><a href="{{ url_for('etsy_search')}}">Go to Product search form.</a></li>
     <li><a href="{{ url_for('shop_results')}}">Go to Shop search form.</a></li>
+    <li><a href="{{ url_for('see_all_products')}}">See all saved products.</a></li>
+    <li><a href="{{ url_for('favorite_product')}}">Discover most popular product.</a></li>
+    <li><a href="{{ url_for('see_all_users')}}">See all saved users.</a></li>
     <li><a href="{{ url_for('see_all_shops')}}">See all saved shops.</a></li>
 </ul>

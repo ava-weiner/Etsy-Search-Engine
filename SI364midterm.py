@@ -96,6 +96,10 @@ class ShopForm(FlaskForm):
 def page_not_found(e):
     return render_template('404.html'), 404
 
+@app.route('/')
+def home_page():
+    return render_template('base.html')
+
 @app.route('/etsy')
 def etsy_search():
     form = EtsyForm()
@@ -207,7 +211,6 @@ def shop_results():
                 db.session.add(shop)
                 db.session.commit()
             results.append((shop.name, shop.products, shop.url))
-    print (results)
     return render_template('shopform.html', form=form, results=results)
 
 @app.route('/all_shops')
